@@ -11,7 +11,7 @@
   header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
   h1{margin:0;font-size:18px;font-weight:700}
   .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button,select,input[type="text"],input[type="number"]{font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+  button,select,input[type="text"]{font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff}
   button{cursor:pointer}
   button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -20,7 +20,6 @@
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
   label{font-size:13px;color:var(--muted)}
   .pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px}
-  .checklist{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
   table{width:100%;border-collapse:collapse}
   th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
   th{background:#f8fafc}
@@ -28,7 +27,6 @@
   .diagram-title{font-size:13px;color:var(--muted);margin-bottom:6px}
   .diagram{display:block;max-width:720px;width:100%;height:auto;margin:0 auto;border:1px solid var(--border);border-radius:8px}
   .placeholder{font-size:13px;color:var(--muted)}
-  /* Step 2 grouping styles */
   .group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   fieldset.group{border:1px solid var(--border);border-radius:10px;padding:10px;background:#fbfcfe}
   fieldset.group legend{font-weight:600;font-size:12px;color:var(--muted);padding:0 6px}
@@ -39,7 +37,7 @@
     header .actions{display:none}
     body{background:#fff}
     .card{break-inside:avoid}
-    @page{size:A4;margin:16mm}
+    @page{size:A4;margin:20mm}
   }
 </style>
 </head>
@@ -48,13 +46,12 @@
     <h1>Trolley Onboarding Planner — <span class="muted">v10.1</span></h1>
     <div class="actions">
       <button class="primary" id="btnPdf">Download as PDF</button>
-      <button onclick="window.print()">Print</button>
       <button id="btnReset">Reset</button>
     </div>
   </header>
 
   <div class="grid">
-    <!-- STEP 1 (kept minimal; no descriptive blurb) -->
+    <!-- STEP 1 -->
     <section class="card" id="currentState">
       <h2>Step 1 · Merchant Overview</h2>
       <div class="row">
@@ -94,7 +91,7 @@
       </div>
     </section>
 
-    <!-- STEP 2 (baseline checklist layout) -->
+    <!-- STEP 2 -->
     <section class="card" id="workflows">
       <h2>Step 2 · Current Workflows</h2>
       <div class="hint">Select all that apply. <b>Payment Approvals</b> is a pick‑one group.</div>
@@ -115,7 +112,7 @@
         <fieldset class="group">
           <legend>Payments</legend>
           <label class="opt"><input type="checkbox" id="pay_manual_psp" /> Payments: Manual payouts (E-Transfer, Wise, etc.)</label>
-          <label class="opt"><input type="checkbox" id="pay_wires" /> Payments: Manual Wires</label>
+          <label class="opt"><input type="checkbox" id="pay_wires" /> Payments: Manual Transfers / Wires</label>
           <label class="opt"><input type="checkbox" id="pay_cheques" /> Payments: Cheques</label>
           <label class="opt"><input type="checkbox" id="pay_digital_wallets" /> Payments: Digital Wallets (PayPal)</label>
         </fieldset>
@@ -134,13 +131,17 @@
       </div>
     </section>
 
-    <!-- PROPOSED SOLUTION -->
+    <!-- TROLLEY PROPOSED SOLUTION -->
     <section class="card" id="solution">
-      <h2>Proposed Solution</h2>
+      <h2>Trolley Proposed Solution</h2>
       <div class="row">
         <label>Recommended Bundle</label><div id="bundle" class="pill">—</div>
         <label>Integration Mode</label><div id="integration" class="pill">—</div>
         <label>Indicative Timeline</label><div id="timeline" class="pill">—</div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:flex-start; width:100%;">
+        <label>Narrative Summary</label>
+        <div id="summary" style="padding:10px; border:1px solid var(--border); border-radius:8px; width:100%; background:#f8fafc;"></div>
       </div>
       <div class="row" style="width:100%;">
         <div class="diagram-wrap" style="width:100%;">
@@ -149,17 +150,16 @@
           <img id="diagramB" class="diagram" alt="Workflow diagram" style="display:none;" />
         </div>
       </div>
-      <div class="row" style="flex-direction:column; align-items:flex-start;">
-        <label>Narrative Summary</label>
-        <div id="summary" style="padding:10px; border:1px solid var(--border); border-radius:8px; width:100%; background:#f8fafc;"></div>
-      </div>
     </section>
 
     <!-- MAPPING -->
     <section class="card" id="mapping">
       <h2>Current → Future Mapping</h2>
-      <table>
-        <thead><tr><th>Process Step</th><th>Current Approach</th><th>Future with Trolley</th><th>Product(s)</th></tr></thead>
+      <div class="hint">Only showing workflow areas relevant to your current selections.</div>
+      <table id="mapTable">
+        <thead>
+          <tr><th>Process Step</th><th>Current Approach</th><th>Future with Trolley</th><th>Product(s)</th></tr>
+        </thead>
         <tbody id="mapBody"></tbody>
       </table>
     </section>
@@ -178,17 +178,15 @@ const IMG = {
   PAY_TAX: "./assets/Pay + Tax.png",
   PAY_TRUST: "./assets/Pay + Trust.png",
   PAY_TAX_TRUST: "./assets/Pay + Tax + Trust.png",
-  // PayPal-only variants
   PAY_PAYPAL: "./assets/Pay (PayPal).png",
   PAY_TAX_PAYPAL: "./assets/Pay + Tax (PayPal).png",
   PAY_TRUST_PAYPAL: "./assets/Pay + Trust (PayPal).png",
   PAY_TAX_TRUST_PAYPAL: "./assets/Pay + Tax + Trust (PayPal).png"
 };
 
-/* ---- Helpers & core logic ---- */
-const $ = (s)=>document.querySelector(s);
+function $(s){ return document.querySelector(s); }
 
-// all Step 2 checkbox IDs (must include every box)
+/* Step 2 IDs for quick checks */
 const STEP2_IDS = [
   'onb_forms','onb_spreadsheets','onb_api','onb_widget',
   'ver_manual','ver_3p_int','ver_3p_nonint',
@@ -198,50 +196,45 @@ const STEP2_IDS = [
 ];
 
 function hasStep2Selections(){
-  return STEP2_IDS.some(id => {
-    const el = document.getElementById(id);
-    return !!(el && el.checked);
-  });
+  for (let id of STEP2_IDS){ const el=document.getElementById(id); if (el && el.checked) return true; }
+  return false;
 }
 
 function state(){
   const rc = Array.from(document.querySelectorAll('.rc:checked')).map(x=>x.value);
   const g  = id => { const el=document.getElementById(id); return !!(el && el.checked); };
   return {
-    merchant_name: $('#merchant_name').value.trim(),
-    merchant_type: $('#merchant_type').value,
-    onboarding_country: $('#onboarding_country').value,
-    funding_currency: $('#funding_currency').value,
+    merchant_name: ($('#merchant_name')||{}).value ? $('#merchant_name').value.trim() : "",
+    merchant_type: ($('#merchant_type')||{}).value || "",
+    onboarding_country: ($('#onboarding_country')||{}).value || "",
+    funding_currency: ($('#funding_currency')||{}).value || "",
     recipient_countries: rc,
     onb_forms: g('onb_forms'), onb_spreadsheets: g('onb_spreadsheets'), onb_api: g('onb_api'), onb_widget: g('onb_widget'),
     ver_manual: g('ver_manual'), ver_3p_int: g('ver_3p_int'), ver_3p_nonint: g('ver_3p_nonint'),
     pay_manual_psp: g('pay_manual_psp'), pay_wires: g('pay_wires'), pay_cheques: g('pay_cheques'), pay_digital_wallets: g('pay_digital_wallets'),
     appr_none: g('appr_none'), appr_single: g('appr_single'), appr_dual: g('appr_dual'),
-    tax_collects: g('tax_collects'), tax_manual_share: g('tax_manual_share'), tax_eoy: g('tax_eoy'),
+    tax_collects: g('tax_collects'), tax_manual_share: g('tax_manual_share'), tax_eoy: g('tax_eoy')
   };
 }
 
+/* ----- Core logic (v10.1) ----- */
 function computeBundle(s){
-  // Gate: no bundle until at least one Step 2 checkbox is selected
   if (!hasStep2Selections()) return null;
-
   const hasTax = s.tax_collects || s.tax_manual_share || s.tax_eoy;
   const hasTrust = s.ver_manual || s.ver_3p_int || s.ver_3p_nonint;
   const hasPayment = s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets;
-
   if (hasTax && hasTrust) return "Pay + Tax + Trust";
   if (hasTax) return "Pay + Tax";
   if (hasTrust && hasPayment) return "Pay + Trust";
   return "Pay";
 }
 function bundleKey(bundle){
+  if (!bundle) return "PAY";
   if (bundle.includes("Tax") && bundle.includes("Trust")) return "PAY_TAX_TRUST";
   if (bundle.includes("Trust")) return "PAY_TRUST";
   if (bundle.includes("Tax")) return "PAY_TAX";
   return "PAY";
 }
-
-// PayPal-only helper and diagram key chooser
 function isPayPalOnlyPayments(s){
   return !!(s.pay_digital_wallets && !s.pay_manual_psp && !s.pay_wires && !s.pay_cheques);
 }
@@ -273,96 +266,98 @@ function computeTimeline(s,bundle,integration){
   if(c===3) return "6–8 weeks";
   return "8–12 weeks";
 }
+
+/* ----- Narrative summary ----- */
 function summarize(s,bundle,integration,timeline){
   const name = s.merchant_name || "the merchant";
   const regions = (s.recipient_countries||[]).join(", ") || "selected regions";
   const currency = s.funding_currency || "selected currency";
-  const parts = [];
-  parts.push(`For ${name}, we recommend ${bundle} with ${integration}.`);
-  parts.push(`Funding in ${currency}; paying recipients across ${regions}.`);
-  if(bundle.includes("Tax")) parts.push("Enable digital W‑8/W‑9 capture and year‑end filing.");
-  if(bundle.includes("Trust")) parts.push("Add verification to reduce risk and automate checks.");
-  if(integration.includes("API")) parts.push("Use the /create-a-batch API for payment prep; use Invoices if taxable segmentation is required.");
-  if(!integration.includes("API")) parts.push("Leverage widget and in‑platform approvals for a fast rollout.");
-  parts.push(`Estimated delivery: ${timeline}.`);
-  return parts.join(" ");
+  const out = [];
+  out.push(`We propose implementing ${bundle} with ${integration} for ${name}.`);
+  out.push(`Funding in ${currency}; paying recipients across ${regions}.`);
+  if (bundle.includes("Tax")) out.push("Enable seamless digital capture of W‑8/W‑9 forms and automated year‑end filing to simplify compliance.");
+  if (bundle.includes("Trust")) out.push("Introduce automated verification to reduce compliance risk and streamline recipient approvals.");
+  if (integration.includes("API")) {
+    out.push("Integrate using the /create‑a‑batch API to automate payment preparation. If segmentation by taxable status is required, extend via Invoices.");
+  } else {
+    out.push("Leverage the Trolley Widget to accelerate and simplify the recipient onboarding experience.");
+  }
+  out.push(`Projected implementation timeline: ${timeline}.`);
+  return out.join(" ");
 }
+
+/* ----- Mapping helpers ----- */
+const anyOnboarding  = s => s.onb_forms || s.onb_spreadsheets || s.onb_api || s.onb_widget;
+const anyVerification= s => s.ver_manual || s.ver_3p_int || s.ver_3p_nonint;
+const anyPayments    = s => s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets;
+const anyApprovals   = s => s.appr_none || s.appr_single || s.appr_dual;
+const anyTax         = s => s.tax_collects || s.tax_manual_share || s.tax_eoy;
 
 function mapRow(step,current,future,prods){
   const tr=document.createElement('tr');
   tr.innerHTML = `<td><b>${step}</b></td><td>${current||'—'}</td><td>${future}</td><td>${prods}</td>`;
   return tr;
 }
+
 function buildMapping(s,bundle,integration){
-  const tbody = $('#mapBody'); tbody.innerHTML = "";
-  const onb_current = [ s.onb_forms && "Manual Forms", s.onb_spreadsheets && "Spreadsheet Uploads", s.onb_api && "API", s.onb_widget && "Widget/Application" ].filter(Boolean).join(", ") || "—";
-  const ver_current = [ s.ver_manual && "Manual", s.ver_3p_int && "3rd party (integrated)", s.ver_3p_nonint && "3rd party (non‑integrated)" ].filter(Boolean).join(", ") || "—";
-  const pay_current = [ s.pay_manual_psp && "Manual payouts (E-Transfer, Wise, etc.)", s.pay_digital_wallets && "Digital Wallets (PayPal)", s.pay_wires && "Manual Wires", s.pay_cheques && "Cheques" ].filter(Boolean).join(", ") || "—";
-  const appr_current = [ s.appr_none && "None", s.appr_single && "Single", s.appr_dual && "Dual" ].filter(Boolean).join(", ") || "—";
-  const tax_current = [ s.tax_collects && "Collects W‑8/W‑9", s.tax_manual_share && "Manual sharing", s.tax_eoy && "End‑of‑Year Filing" ].filter(Boolean).join(", ") || "—";
+  const tbody = $('#mapBody'); if (!tbody) return;
+  tbody.innerHTML = "";
 
-  const onb_future = integration.includes("API") ? "Auto‑collection via API + optional widget" : "Auto‑collection via Trolley Widget";
-  const ver_future = (bundle||"").includes("Trust") ? "Automated verification & failure triage" : "Basic checks; manual review as needed";
-  let pay_future = integration.includes("API") ? "Batch creation via /create‑a‑batch; approvals in‑platform; payouts automated" : "Prepare batches in platform; approvals & payouts automated";
-  if (isPayPalOnlyPayments(s)) pay_future += " via PayPal integration";
-  const appr_future = "Role‑based approvals in‑platform";
-  const tax_future = (bundle||"").includes("Tax") ? "Digital W‑8/W‑9 collection and year‑end filing; use Invoices if taxable segmentation needed" : "N/A";
+  const onb_current = [ s.onb_forms && "Manual Forms", s.onb_spreadsheets && "Spreadsheet Uploads", s.onb_api && "API", s.onb_widget && "Widget/Application" ].filter(Boolean).join(", ");
+  const ver_current = [ s.ver_manual && "Manual", s.ver_3p_int && "3rd party (integrated)", s.ver_3p_nonint && "3rd party (non‑integrated)" ].filter(Boolean).join(", ");
+  const pay_current = [ s.pay_manual_psp && "Manual payouts (E-Transfer, Wise, etc.)", s.pay_digital_wallets && "Digital Wallets (PayPal)", s.pay_wires && "Manual Transfers / Wires", s.pay_cheques && "Cheques" ].filter(Boolean).join(", ");
+  const appr_current= [ s.appr_none && "None", s.appr_single && "Single", s.appr_dual && "Dual" ].filter(Boolean).join(", ");
+  const tax_current = [ s.tax_collects && "Collects W‑8/W‑9", s.tax_manual_share && "Manual sharing", s.tax_eoy && "End‑of‑Year Filing" ].filter(Boolean).join(", ");
 
-  tbody.appendChild(mapRow("Recipient Onboarding", onb_current, onb_future, (bundle||"").includes("Trust")?"Pay, Trust":"Pay"));
-  tbody.appendChild(mapRow("Verification", ver_current, ver_future, (bundle||"").includes("Trust")?"Trust":"—"));
-  tbody.appendChild(mapRow("Payments", pay_current, pay_future, "Pay"));
-  tbody.appendChild(mapRow("Payment Approvals", appr_current, appr_future, "Pay"));
-  tbody.appendChild(mapRow("Tax & Reporting", tax_current, tax_future, (bundle||"").includes("Tax")?"Tax":"—"));
+  const onb_future = computeIntegration(s).includes("API") ? "Automated recipient onboarding via API (with optional widget) and mapped external IDs." : "Automated recipient onboarding via the Trolley Widget; IDs mapped for downstream reconciliation.";
+  const ver_future = (bundle||"").includes("Trust") ? "Automated verification with configurable checks and failure triage to reduce compliance risk." : "Lightweight checks with manual review as needed.";
+  let   pay_future = computeIntegration(s).includes("API") ? "Automate payment preparation via /create‑a‑batch; apply role‑based approvals; trigger payouts programmatically." : "Prepare payment batches in platform; apply role‑based approvals; automate disbursements.";
+  if (isPayPalOnlyPayments(s)) pay_future += " (via PayPal integration).";
+  const appr_future= "Role‑based approvals with audit trail and separation of duties.";
+  const tax_future = (bundle||"").includes("Tax") ? "Digital W‑8/W‑9 capture, validation, and automated year‑end filing; use Invoices for taxable segmentation when required." : "N/A";
+
+  if (anyOnboarding(s))   tbody.appendChild(mapRow("Recipient Onboarding", onb_current, onb_future, (bundle||"").includes("Trust")?"Pay, Trust":"Pay"));
+  if (anyVerification(s)) tbody.appendChild(mapRow("Verification", ver_current, ver_future, (bundle||"").includes("Trust")?"Trust":"—"));
+  if (anyPayments(s))     tbody.appendChild(mapRow("Payments", pay_current, pay_future, "Pay"));
+  if (anyApprovals(s))    tbody.appendChild(mapRow("Payment Approvals", appr_current, appr_future, "Pay"));
+  if (anyTax(s))          tbody.appendChild(mapRow("Tax & Reporting", tax_current, tax_future, (bundle||"").includes("Tax")?"Tax":"—"));
 }
+
 function buildRoadmap(bundle,integration){
   const phases=[];
-  phases.push("Phase 1 – Foundation: Fund account, configure integration, assign roles.");
-  phases.push("Phase 2 – Recipient Onboarding: " + (integration.includes("API")?"API (with optional widget)":"Trolley Widget") + " and map external IDs.");
-  phases.push("Phase 3 – Payments: " + (integration.includes("API")?"Create batches via /create‑a‑batch; approvals in‑platform; automate payouts.":"Prepare batches in platform; approvals & payouts automated."));
-  if((bundle||"").includes("Tax")) phases.push("Phase 4 – Tax & Compliance: Digital W‑8/W‑9, validation, year‑end filing.");
-  if((bundle||"").includes("Trust")) phases.push("Phase 4b – Trust: Verification flows and failure triage.");
-  phases.push("Phase 5 – Go‑Live & Optimize: Dry‑run payouts, migrate recipients, monitor dashboards.");
-  const ol = $('#phases'); ol.innerHTML=''; phases.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ol.appendChild(li); });
+  phases.push("Phase 1 – Foundation & Access: Enable funding, configure environments, assign roles/permissions, and define success metrics.");
+  phases.push("Phase 2 – Onboarding Integration: " + (integration.includes("API") ? "Implement API for recipient onboarding (optionally add widget) and map external IDs." : "Deploy the Trolley Widget for recipient onboarding and map external IDs."));
+  phases.push("Phase 3 – Payments Automation: " + (integration.includes("API") ? "Integrate /create‑a‑batch, configure approval flows, and validate end‑to‑end payouts." : "Configure batch preparation in platform, role‑based approvals, and automated disbursements."));
+  if((bundle||"").includes("Tax"))   phases.push("Phase 4 – Tax & Compliance: Launch digital W‑8/W‑9 capture, validate data quality, and schedule automated year‑end filings.");
+  if((bundle||"").includes("Trust")) phases.push("Phase 4b – Verification (Trust): Configure verification checks, routing, and failure triage; tune thresholds.");
+  phases.push("Phase 5 – Go‑Live & Optimize: Dry‑run payouts, migrate recipients, monitor dashboards, and iterate on KPIs.");
+  const ol = $('#phases'); if (!ol) return; ol.innerHTML=''; phases.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ol.appendChild(li); });
 }
+
+/* ----- Diagram in the app UI ----- */
 function setDiagram(imgEl, phEl, bundle){
   const s = state();
   const key = computeDiagramKey(s, bundle);
   const path = IMG[key] || "";
-  if(path){
-    imgEl.src = path;                   // local file in same folder
-    imgEl.style.display = "block";
-    if (phEl) phEl.style.display = "none";
-  }else{
-    imgEl.removeAttribute("src");
-    imgEl.style.display = "none";
-    if (phEl) phEl.style.display = "block";
-  }
+  if(path){ imgEl.src = path; imgEl.style.display = "block"; if (phEl) phEl.style.display = "none"; }
+  else { imgEl.removeAttribute("src"); imgEl.style.display = "none"; if (phEl) phEl.style.display = "block"; }
 }
 
+/* ----- Render & Reset ----- */
 function render(){
   const s = state();
-  const bundle = computeBundle(s);              // null until Step 2 touched
+  const bundle = computeBundle(s);
   const integration = computeIntegration(s);
   const timeline = computeTimeline(s, bundle || "", integration);
 
-  // Header pills
   $('#bundle').textContent      = bundle || '—';
   $('#integration').textContent = integration;
   $('#timeline').textContent    = timeline;
 
-  // Proposed Solution diagram only (gated)
   const imgB = $('#diagramB'), phB = $('#diagramPlaceholderB');
-  if (bundle) {
-    setDiagram(imgB, phB, bundle);
-  } else {
-    imgB.removeAttribute('src'); imgB.style.display='none';
-    if (phB) phB.style.display='block';
-  }
+  if (bundle) setDiagram(imgB, phB, bundle); else { imgB.removeAttribute('src'); imgB.style.display='none'; if (phB) phB.style.display='block'; }
 
-  // Summary only when bundle exists
   $('#summary').textContent = bundle ? summarize(s, bundle, integration, timeline) : '';
-
-  // Table & roadmap can still render with defaults
   buildMapping(s, bundle || 'Pay', integration);
   buildRoadmap(bundle || 'Pay', integration);
 }
@@ -374,94 +369,140 @@ function resetAll(){
   render();
 }
 
-// PDF: only summary, diagram, mapping, roadmap — in a separate print window
+/* ===== PDF (fixed-height background box; Option 1 margins) ===== */
 function generatePDF(){
   const s = state();
-  const bundle = computeBundle(s);              // may be null
+  const bundle = computeBundle(s);
   const integration = computeIntegration(s);
   const timeline = computeTimeline(s, bundle || "", integration);
   const key = bundle ? computeDiagramKey(s, bundle) : null;
   const diagramSrc = key ? IMG[key] : "";
+  const summaryText = bundle ? summarize(s,bundle,integration,timeline) : "";
+  const merchantName = s.merchant_name || "the merchant";
 
-  const date = new Date().toISOString().slice(0,10);
-
-  // Build the print-only HTML
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = `
-    <h1 style="margin:0 0 8px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">Trolley Onboarding Plan</h1>
-    <div style="color:#64748b;font-size:12px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">${s.merchant_name || "Merchant"} · Generated ${date}</div>
-    <hr style="border:0;border-top:1px solid #e2e8f0;margin:12px 0" />
-    <h3 style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">Proposed Solution</h3>
-    <div><b>Recommended Bundle:</b> ${bundle || '—'}</div>
-    <div><b>Integration Mode:</b> ${integration}</div>
-    <div><b>Indicative Timeline:</b> ${timeline}</div>
-    ${diagramSrc ? `<div style=\"margin:12px 0;\"><img src=\"${diagramSrc}\" style=\"max-width:100%;border:1px solid #e2e8f0;border-radius:8px\" /></div>`
-                 : `<div style=\"color:#64748b;font-size:12px\">(No diagram — select options in Step 2)</div>`}
-    <div style="margin-top:8px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">${bundle ? summarize(s,bundle,integration,timeline) : ''}</div>
-    <h3 style="margin-top:16px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">Current → Future Mapping</h3>
-  `;
-
-  // Clone the mapping table (keeps what is rendered on screen)
-  const mapClone = document.querySelector('#mapping table').cloneNode(true);
-  wrapper.appendChild(mapClone);
-
-  // Roadmap list
-  const ul = document.createElement('ol');
-  document.querySelectorAll('#phases li').forEach(li=>{
-    const n=document.createElement('li'); n.textContent=li.textContent; ul.appendChild(n);
-  });
-  const rmSec = document.createElement('div');
-  rmSec.innerHTML = '<h3 style="margin-top:16px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">Implementation Roadmap</h3>';
-  rmSec.appendChild(ul);
-  wrapper.appendChild(rmSec);
-
-  // Print in a separate window so ONLY this content appears
+  // Build the print document
   const win = window.open('', '_blank');
+
+  // Page-1 uses a grid so the last row (diagramBox) always takes the remaining space.
   const styles = `
     <style>
       @page { size: A4; margin: 16mm; }
-      body { background:#fff; color:#0f172a; }
-      table { width:100%; border-collapse:collapse; font: 14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
-      th,td { padding:8px 10px; border-bottom:1px solid #e2e8f0; text-align:left; vertical-align:top; }
+      @page:first { margin: 12mm 16mm; } /* a little extra space on page 1 */
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { margin:0; background:#fff; color:#0f172a;
+             font:13px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; line-height:1.5; }
+
+      h2 { margin:0 0 8px; font-weight:700; font-size:16px; }
+      h3 { margin:12px 0 6px; font-weight:600; font-size:14px; color:#2563eb; }
+      table { width:100%; border-collapse:collapse; }
+      th,td { padding:8px 10px; border-bottom:1px solid #e2e8f0; vertical-align:top; text-align:left; }
       th { background:#f8fafc; }
-      h1,h2,h3 { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
-    </style>`;
-  win.document.open();
-  win.document.write(`<!doctype html><html><head><meta charset=\"utf-8\" />${styles}<title>Trolley Onboarding Plan</title></head><body>${wrapper.innerHTML}</body></html>`);
-  win.document.close();
-  win.focus();
-  const maybePrint = () => { try { win.print(); } finally { win.close(); } };
-  const img = win.document.querySelector('img');
-  if (img) { img.onload = maybePrint; img.onerror = maybePrint; } else { maybePrint(); }
+      ol { padding-left:18px; }
+
+      /* Page 1 layout: everything in one page-height grid */
+      #page1 {
+        height: 100vh;              /* exactly one printed page */
+        display: grid;
+        grid-template-rows: auto auto auto 1fr;  /* title/table, summary title+box, diagram title, diagram box (fills rest) */
+        gap: 6px;
+        page-break-inside: avoid;
+      }
+      #psTable { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; font-size:13px; }
+      #psSummary { padding:10px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; }
+
+      /* The diagram box fills remaining space; image is painted as background */
+      #diagramBox {
+        border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;
+        background-repeat:no-repeat; background-position:center; background-size:contain;
+        width:100%;
+        min-height: 80px; /* in case there’s tons of text and almost no room */
+      }
+
+      /* Page 2+ (mapping + roadmap) */
+      .pagebreak { page-break-before: always; }
+    </style>
+  `;
+
+  // Build page 1 grid
+  const page1 = `
+    <div id="page1">
+      <div>
+        <h2>Trolley Proposed Solution – ${merchantName}</h2>
+        <table id="psTable">
+          <tbody>
+            <tr style="background:#f8fafc"><td style="padding:8px 10px;width:170px"><b>Recommended Bundle:</b></td><td style="padding:8px 10px">${bundle || '—'}</td></tr>
+            <tr><td style="padding:8px 10px"><b>Integration Mode:</b></td><td style="padding:8px 10px">${integration}</td></tr>
+            <tr><td style="padding:8px 10px"><b>Indicative Timeline:</b></td><td style="padding:8px 10px">${timeline}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h3>Narrative Summary</h3>
+        <div id="psSummary">${summaryText}</div>
+      </div>
+
+      <h3 style="margin-top:6px">Workflow Diagram</h3>
+
+      <div id="diagramBox" style="${diagramSrc ? `background-image:url('${diagramSrc}')` : ''}">
+        ${diagramSrc ? '' : `<div style="color:#64748b;font-size:12px;padding:8px"> (No diagram — select options in Step 2) </div>`}
+      </div>
+    </div>
+  `;
+
+  // Page 2+: mapping + roadmap (clone from UI so it matches what you see)
+  const mapClone = document.querySelector('#mapping table').cloneNode(true);
+  const phasesClone = Array.from(document.querySelectorAll('#phases li')).map(li=>`<li>${li.textContent}</li>`).join('');
+
+  const page2plus = `
+    <div class="pagebreak"></div>
+    <h2>Current → Future Mapping</h2>
+    ${mapClone.outerHTML}
+    <h2 style="margin:16px 0 8px">Implementation Roadmap</h2>
+    <ol>${phasesClone}</ol>
+  `;
+
+  const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Trolley Onboarding Plan.pdf</title>${styles}</head><body>${page1}${page2plus}</body></html>`;
+  win.document.open(); win.document.write(html); win.document.close();
+
+  // Suggested filename
+  win.document.title = "Trolley Onboarding Plan.pdf";
+
+  // Print and then re-assert the app's diagram (in case the browser cleared the img src)
+  const finish = () => {
+    try { win.focus(); win.print(); } finally { win.close(); }
+    // Re-assert the UI diagram exactly like the good baseline does
+    const b = computeBundle(state());
+    if (b) setDiagram(document.getElementById('diagramB'), document.getElementById('diagramPlaceholderB'), b);
+  };
+
+  // No image load dependency because background images don’t affect layout. Just print.
+  setTimeout(finish, 0);
 }
 
-/* Bind events */
+/* ----- Bind ----- */
 function wire(){
   const controls = document.querySelectorAll('input, select, textarea');
-  controls.forEach(el => {
-    ['change','input','keyup','click'].forEach(evt => el.addEventListener(evt, render, {passive:true}));
-  });
+  for (const el of controls){ ['change','input','click','keyup'].forEach(evt => el.addEventListener(evt, render)); }
   document.getElementById('btnPdf').addEventListener('click', generatePDF);
   document.getElementById('btnReset').addEventListener('click', resetAll);
 
-  // Make approvals mutually exclusive
+  // approvals mutually exclusive
   const apprIds = ['appr_none','appr_single','appr_dual'];
-  apprIds.forEach(id=>{
+  for (const id of apprIds){
     const el=document.getElementById(id);
     if(el){
-      el.addEventListener('change',(e)=>{
+      el.addEventListener('change', e=>{
         if(e.target.checked){
-          apprIds.forEach(o=>{ if(o!==id){ const oe=document.getElementById(o); if(oe) oe.checked=false; }});
+          for (const other of apprIds){ if(other!==id){ const oe=document.getElementById(other); if(oe) oe.checked=false; } }
           render();
         }
       });
     }
-  });
-
+  }
   render();
 }
-
-document.addEventListener('DOMContentLoaded', wire);
+if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', wire); } else { wire(); }
 </script>
 </body>
 </html>
