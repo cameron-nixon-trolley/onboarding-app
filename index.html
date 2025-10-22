@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Trolley Onboarding Planner — v10.12</title>
+<title>Trolley Onboarding Planner — v10.18</title>
 <style>
   :root { --bg:#f6f7fb; --card:#fff; --ink:#0f172a; --muted:#64748b; --accent:#2563eb; --border:#e2e8f0; }
   *{box-sizing:border-box}
@@ -11,7 +11,7 @@
   header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
   h1{margin:0;font-size:18px;font-weight:700}
   .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button,select,input[type="text"]{font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+  button,select,input[type="text"],input[type="date"]{font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff}
   button{cursor:pointer}
   button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -47,7 +47,7 @@
 </head>
 <body>
   <header>
-    <h1>Trolley Onboarding Planner — <span class="muted">v10.12</span></h1>
+    <h1>Trolley Onboarding Planner — <span class="muted">v10.18</span></h1>
     <div class="actions">
       <button class="primary" id="btnPdf">Download as PDF</button>
       <button id="btnReset">Reset</button>
@@ -115,6 +115,10 @@
           <option>PayPal</option>
           <option>Other</option>
         </select>
+      </div>
+      <div class="row">
+        <label>Target Go‑Live Date</label>
+        <input id="go_live_date" type="date" />
       </div>
     </section>
 
@@ -236,6 +240,7 @@ function state(){
     merchant_type: ($('#merchant_type')||{}).value || "",
     implementation_type: ($('#implementation_type')||{}).value || "",
     competitor_name: ($('#competitor_name')||{}).value || "",
+    go_live_date: ($('#go_live_date')||{}).value || "",
     onboarding_country: ($('#onboarding_country')||{}).value || "",
     funding_currency: ($('#funding_currency')||{}).value || "",
     recipient_countries: rc,
@@ -251,7 +256,7 @@ function isStep1Complete(s){
   return !!(s.merchant_type && s.onboarding_country && s.funding_currency);
 }
 
-/* ----- Core logic (v10.6) ----- */
+/* ----- Core logic ----- */
 function computeBundle(s){
   if (!hasStep2Selections()) return null;
   const hasTax = s.tax_collects || s.tax_manual_share || s.tax_eoy;
@@ -381,9 +386,9 @@ function buildRoadmap(bundle,integration){
   if (notes.length) commsLine += ` (${notes.join('; ')})`;
 
   // 2) Implementation type → name the migration
-  let migrateStr = "Migrate recipient list to Trolley";
+  let migrateStr = "Migrate recipient list to Trolley (export & field mapping)";
   if (impl === 'competitor replacement' && (s.competitor_name||'').trim()){
-    migrateStr = `Migrate recipient list from ${s.competitor_name}`;
+    migrateStr = `Migrate recipient list from ${s.competitor_name} (export & field mapping)`;
   }
 
   // 3) Approvals level → reflect in Go‑Live
@@ -397,9 +402,30 @@ function buildRoadmap(bundle,integration){
     countriesLine = "Confirm payout countries, currencies & volume ramp schedule";
   }
 
+  // Header suffixes (computed before phases to avoid ReferenceError if used in titles)
+  let kickoffSuffix = '';
+  let goLiveSuffix = '';
+  if (s.go_live_date) {
+    try {
+      const gl = new Date(s.go_live_date);
+      if (!isNaN(gl)) {
+        const fmt = (d) => d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+        const start = new Date(gl);
+        start.setDate(start.getDate() - 42); // 6 weeks prior
+        const weekStart = new Date(start);
+        const day = weekStart.getDay(); // 0=Sun,1=Mon,...
+        const offset = (day === 0) ? 6 : (day - 1); // days since Monday
+        weekStart.setDate(weekStart.getDate() - offset);
+        kickoffSuffix = `(Begin by week of ${fmt(weekStart)})`;
+        goLiveSuffix = `(Target Date: ${fmt(gl)})`;
+      }
+    } catch {/* ignore */}
+  }
+
   const phases = [
     {
       title: 'Kickoff',
+      suffix: kickoffSuffix,
       items: [
         'Trolley Compliance Onboarding (collect & submit required documents to Trolley)',
         'Identify key stakeholders',
@@ -428,6 +454,7 @@ function buildRoadmap(bundle,integration){
     },
     {
       title: 'Go‑Live',
+      suffix: goLiveSuffix,
       items: [
         'Final approvals',
         countriesLine,
@@ -458,7 +485,7 @@ function buildRoadmap(bundle,integration){
   for (const p of phases){
     const li = document.createElement('li');
     const title = document.createElement('div');
-    title.innerHTML = `<b>${p.title}</b>`;
+    title.innerHTML = `<b>${p.title}</b>${p.suffix ? ' <span class="muted">'+p.suffix+'</span>' : ''}`;
     const ul = document.createElement('ul');
     for (const it of p.items){ const i = document.createElement('li'); i.textContent = it; ul.appendChild(i); }
     li.appendChild(title); li.appendChild(ul); ol.appendChild(li);
@@ -488,13 +515,16 @@ function render(){
   // Show/hide competitor selector based on Implementation Type
   const compRow = document.getElementById('competitor_row');
   if (compRow){
-    if (s.implementation_type === 'Competitor Replacement'){
+    const implVal = (s.implementation_type || '').toLowerCase();
+    if (implVal === 'competitor replacement'){
       compRow.style.display = '';
     } else {
       compRow.style.display = 'none';
-      const compSel = document.getElementById('competitor_name'); if (compSel) compSel.selectedIndex = 0;
+      const compSel = document.getElementById('competitor_name');
+      if (compSel) compSel.selectedIndex = 0;
     }
   }
+
   const bundle = computeBundle(s);
   const stepReady = isStep1Complete(s) && hasStep2Selections();
   const integration = stepReady ? computeIntegration(s) : '';
@@ -530,6 +560,7 @@ function resetAll(){
   document.querySelectorAll('input[type="text"]').forEach(i=>i.value="");
   document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
   document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
+  document.getElementById('go_live_date').value = '';
   render();
 }
 
@@ -564,7 +595,8 @@ function generatePDF(){
       #page1 { height: 100vh; display: grid; grid-template-rows: auto auto auto 1fr; gap: 6px; page-break-inside: avoid; }
       #psTable { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; font-size:13px; }
       #psSummary { padding:10px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; }
-      #diagramBox { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; background-repeat:no-repeat; background-position:center; background-size:contain; width:100%; min-height: 80px; }
+      #diagramBox { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; width:100%; min-height: 120px; display:flex; align-items:center; justify-content:center; }
+      #diagramBox img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
       .pagebreak { page-break-before: always; }
     </style>
   `;
@@ -584,7 +616,11 @@ function generatePDF(){
         <div id="psSummary">${summaryText}</div>
       </div>
       <h3 style="margin-top:6px">Workflow Diagram</h3>
-      <div id="diagramBox" style="${diagramSrc ? `background-image:url('${diagramSrc}')` : ''}">${diagramSrc ? '' : `<div style="color:#64748b;font-size:12px;padding:8px"> (No diagram — select options in Step 2) </div>`}</div>
+
+      <div id="diagramBox">
+        ${diagramSrc ? `<img id="pdfDiagram" src="${new URL(diagramSrc, location.href).href}" alt="Workflow diagram"/>`
+                      : `<div style="color:#64748b;font-size:12px;padding:8px"> (No diagram — select options in Step 2) </div>`}
+      </div>
     </div>
   `;
 
@@ -606,15 +642,26 @@ function generatePDF(){
   `;
 
   const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Trolley Onboarding Plan.pdf</title>${styles}</head><body>${page1}${page2plus}</body></html>`;
-  win.document.open(); win.document.write(html); win.document.close();
+  const doc = win.document; doc.open(); doc.write(html); doc.close();
   win.document.title = "Trolley Onboarding Plan.pdf";
 
-  const finish = () => {
+  const printWhenReady = () => {
     try { win.focus(); win.print(); } finally { win.close(); }
     const b = computeBundle(state());
     if (b) setDiagram(document.getElementById('diagramB'), document.getElementById('diagramPlaceholderB'), b);
   };
-  setTimeout(finish, 0);
+
+  if (diagramSrc) {
+    const img = win.document.getElementById('pdfDiagram');
+    if (img) {
+      if (img.complete) { printWhenReady(); }
+      else { img.onload = printWhenReady; img.onerror = printWhenReady; }
+    } else {
+      printWhenReady();
+    }
+  } else {
+    printWhenReady();
+  }
 }
 
 /* ----- Bind ----- */
