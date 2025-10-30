@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Trolley Onboarding Planner — v10.18</title>
+<title>Trolley Onboarding Planner — v10.19</title>
 <style>
   :root { --bg:#f6f7fb; --card:#fff; --ink:#0f172a; --muted:#64748b; --accent:#2563eb; --border:#e2e8f0; }
   *{box-sizing:border-box}
@@ -47,7 +47,7 @@
 </head>
 <body>
   <header>
-    <h1>Trolley Onboarding Planner — <span class="muted">v10.18</span></h1>
+    <h1>Trolley Onboarding Planner — <span class="muted">v10.19</span></h1>
     <div class="actions">
       <button class="primary" id="btnPdf">Download as PDF</button>
       <button id="btnReset">Reset</button>
@@ -90,6 +90,8 @@
             <label class="pill"><input type="checkbox" class="rc" value="LATAM" /> LATAM</label>
             <label class="pill"><input type="checkbox" class="rc" value="Asia" /> Asia</label>
             <label class="pill"><input type="checkbox" class="rc" value="Australia" /> Australia</label>
+            <!-- Africa carried from Index 2 -->
+            <label class="pill"><input type="checkbox" class="rc" value="Africa" /> Africa</label>
           </div>
         </div>
       </div>
@@ -116,6 +118,7 @@
           <option>Other</option>
         </select>
       </div>
+      <!-- New: Target Go‑Live Date from Index 1 -->
       <div class="row">
         <label>Target Go‑Live Date</label>
         <input id="go_live_date" type="date" />
@@ -256,7 +259,7 @@ function isStep1Complete(s){
   return !!(s.merchant_type && s.onboarding_country && s.funding_currency);
 }
 
-/* ----- Core logic ----- */
+/* ----- Core logic (base: Index 2) ----- */
 function computeBundle(s){
   if (!hasStep2Selections()) return null;
   const hasTax = s.tax_collects || s.tax_manual_share || s.tax_eoy;
@@ -306,7 +309,7 @@ function computeTimeline(s,bundle,integration){
   return "8–12 weeks";
 }
 
-/* ----- Narrative summary ----- */
+/* ----- Narrative summary (kept from Index 2) ----- */
 function summarize(s,bundle,integration,timeline){
   const name = s.merchant_name || "the merchant";
   const regions = (s.recipient_countries||[]).join(", ") || "selected regions";
@@ -317,7 +320,7 @@ function summarize(s,bundle,integration,timeline){
   if (bundle.includes("Tax")) out.push("Enable seamless digital capture of W‑8/W‑9 forms and automated year‑end filing to simplify compliance.");
   if (bundle.includes("Trust")) out.push("Introduce automated verification to reduce compliance risk and streamline recipient approvals.");
   if (integration.includes("API")) {
-    out.push("Integrate using the /create‑a‑batch API to automate payment preparation. If segmentation by taxable status is required, extend via Invoices.");
+    out.push("Integrate using the Trolley API to automate recipient onboarding and payouts.");
   } else {
     out.push("Leverage the Trolley Widget to accelerate and simplify the recipient onboarding experience.");
   }
@@ -350,7 +353,7 @@ function buildMapping(s,bundle,integration){
 
   const onb_future = computeIntegration(s).includes("API") ? "Automated recipient onboarding via API (with optional widget) and mapped external IDs." : "Automated recipient onboarding via the Trolley Widget; IDs mapped for downstream reconciliation.";
   const ver_future = (bundle||"").includes("Trust") ? "Automated verification with configurable checks and failure triage to reduce compliance risk." : "Lightweight checks with manual review as needed.";
-  let   pay_future = computeIntegration(s).includes("API") ? "Automate payment preparation via /create‑a‑batch; apply role‑based approvals; trigger payouts programmatically." : "Prepare payment batches in platform; apply role‑based approvals; automate disbursements.";
+  let   pay_future = computeIntegration(s).includes("API") ? "Leverage the Trolley API to automate recipient onboarding and payout processing at scale." : "Prepare payment batches in platform; apply role‑based approvals; automate disbursements.";
   if (isPayPalOnlyPayments(s)) pay_future += " (via PayPal integration).";
   const appr_future= "Role‑based approvals with audit trail and separation of duties.";
   const tax_future = (bundle||"").includes("Tax") ? "Digital W‑8/W‑9 capture, validation, and automated year‑end filing; use Invoices for taxable segmentation when required." : "N/A";
@@ -369,7 +372,7 @@ function buildRoadmap(bundle,integration){
   const hasTax   = (bundle||"").includes("Tax");
   const hasTrust = (bundle||"").includes("Trust");
 
-  // 1) Integration channel → swap wording in Deploy
+  // 1) Integration channel → wording in Deploy
   const api = !!s.onb_api; const widget = !!s.onb_widget;
   let setupLine = "Configure & test integration (API or Widget)";
   if (api && widget) setupLine = "Configure & test API + Widget";
@@ -380,8 +383,8 @@ function buildRoadmap(bundle,integration){
   let commsLine = "Recipient onboarding & communications";
   const notes = [];
   const walletOnly = !!(s.pay_digital_wallets && !s.pay_manual_psp && !s.pay_wires && !s.pay_cheques);
-  if (walletOnly) notes.push("wallet-only payout flow");
   const multiRegion = (s.recipient_countries || []).length >= 3;
+  if (walletOnly) notes.push("wallet-only payout flow");
   if (multiRegion) notes.push("localized onboarding & comms");
   if (notes.length) commsLine += ` (${notes.join('; ')})`;
 
@@ -402,7 +405,7 @@ function buildRoadmap(bundle,integration){
     countriesLine = "Confirm payout countries, currencies & volume ramp schedule";
   }
 
-  // Header suffixes (computed before phases to avoid ReferenceError if used in titles)
+  // New: Header suffixes computed from go_live_date (ported from Index 1)
   let kickoffSuffix = '';
   let goLiveSuffix = '';
   if (s.go_live_date) {
@@ -414,7 +417,7 @@ function buildRoadmap(bundle,integration){
         start.setDate(start.getDate() - 42); // 6 weeks prior
         const weekStart = new Date(start);
         const day = weekStart.getDay(); // 0=Sun,1=Mon,...
-        const offset = (day === 0) ? 6 : (day - 1); // days since Monday
+        const offset = (day === 0) ? 6 : (day - 1); // shift back to Monday
         weekStart.setDate(weekStart.getDate() - offset);
         kickoffSuffix = `(Begin by week of ${fmt(weekStart)})`;
         goLiveSuffix = `(Target Date: ${fmt(gl)})`;
@@ -512,7 +515,7 @@ function setDiagram(imgEl, phEl, bundle){
 function render(){
   const s = state();
 
-  // Show/hide competitor selector based on Implementation Type
+  // Show/hide competitor selector based on Implementation Type (case-insensitive)
   const compRow = document.getElementById('competitor_row');
   if (compRow){
     const implVal = (s.implementation_type || '').toLowerCase();
@@ -560,7 +563,7 @@ function resetAll(){
   document.querySelectorAll('input[type="text"]').forEach(i=>i.value="");
   document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
   document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
-  document.getElementById('go_live_date').value = '';
+  const d = document.getElementById('go_live_date'); if (d) d.value='';
   render();
 }
 
@@ -579,7 +582,6 @@ function generatePDF(){
   // Build the print document
   const win = window.open('', '_blank');
 
-  // Page-1 uses a grid so the last row (diagramBox) always takes the remaining space.
   const styles = `
     <style>
       @page { size: A4; margin: 16mm; }
