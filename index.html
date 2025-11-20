@@ -27,7 +27,6 @@
   .diagram-title{font-size:13px;color:var(--muted);margin-bottom:6px}
   .diagram{display:block;max-width:720px;width:100%;height:auto;margin:0 auto;border:1px solid var(--border);border-radius:8px}
   .placeholder{font-size:13px;color:var(--muted)}
-  /* Recipient countries spacing & layout */
   .rc-group .section-label{display:block;margin-bottom:8px}
   .pills{display:flex;flex-wrap:wrap;gap:8px}
   .pills .pill{margin-right:0}
@@ -90,7 +89,6 @@
             <label class="pill"><input type="checkbox" class="rc" value="LATAM" /> LATAM</label>
             <label class="pill"><input type="checkbox" class="rc" value="Asia" /> Asia</label>
             <label class="pill"><input type="checkbox" class="rc" value="Australia" /> Australia</label>
-            <!-- Africa carried from Index 2 -->
             <label class="pill"><input type="checkbox" class="rc" value="Africa" /> Africa</label>
           </div>
         </div>
@@ -105,7 +103,6 @@
           <option>Homegrown Replacement</option>
         </select>
       </div>
-      <!-- Conditional: Competitor Name (only when Implementation Type = Competitor Replacement) -->
       <div class="row" id="competitor_row" style="display:none;">
         <label>Competitor Name</label>
         <select id="competitor_name">
@@ -118,9 +115,8 @@
           <option>Other</option>
         </select>
       </div>
-      <!-- New: Target Go‑Live Date from Index 1 -->
       <div class="row">
-        <label>Target Go‑Live Date</label>
+        <label>Target Go-Live Date</label>
         <input id="go_live_date" type="date" />
       </div>
     </section>
@@ -128,7 +124,7 @@
     <!-- STEP 2 -->
     <section class="card" id="workflows">
       <h2>Step 2 · Current Workflows</h2>
-      <div class="hint">Select all that apply. <b>Payment Approvals</b> is a pick‑one group.</div>
+      <div class="hint">Select all that apply. <b>Payment Approvals</b> is a pick-one group.</div>
       <div class="group-grid">
         <fieldset class="group">
           <legend>Onboarding</legend>
@@ -141,12 +137,14 @@
           <legend>Verification</legend>
           <label class="opt"><input type="checkbox" id="ver_manual" /> Verification: Manual</label>
           <label class="opt"><input type="checkbox" id="ver_3p_int" /> Verification: 3rd party (integrated)</label>
-          <label class="opt"><input type="checkbox" id="ver_3p_nonint" /> Verification: 3rd party (non‑integrated)</label>
+          <label class="opt"><input type="checkbox" id="ver_3p_nonint" /> Verification: 3rd party (non-integrated)</label>
         </fieldset>
         <fieldset class="group">
           <legend>Payments</legend>
           <label class="opt"><input type="checkbox" id="pay_manual_psp" /> Payments: Manual payouts (E-Transfer, Wise, etc.)</label>
           <label class="opt"><input type="checkbox" id="pay_wires" /> Payments: Manual Transfers / Wires</label>
+          <label class="opt"><input type="checkbox" id="pay_api_auto" /> Payments: API automated</label>
+          <label class="opt"><input type="checkbox" id="pay_competitor" /> Payments: Competitor Solution</label>
           <label class="opt"><input type="checkbox" id="pay_cheques" /> Payments: Cheques</label>
           <label class="opt"><input type="checkbox" id="pay_digital_wallets" /> Payments: Digital Wallets (PayPal)</label>
         </fieldset>
@@ -158,9 +156,9 @@
         </fieldset>
         <fieldset class="group">
           <legend>Tax</legend>
-          <label class="opt"><input type="checkbox" id="tax_collects" /> Tax: Collects W‑8/W‑9</label>
+          <label class="opt"><input type="checkbox" id="tax_collects" /> Tax: Collects W-8/W-9</label>
           <label class="opt"><input type="checkbox" id="tax_manual_share" /> Tax: Manual sharing of forms</label>
-          <label class="opt"><input type="checkbox" id="tax_eoy" /> Tax: End‑of‑Year Filing</label>
+          <label class="opt"><input type="checkbox" id="tax_eoy" /> Tax: End-of-Year Filing</label>
         </fieldset>
       </div>
     </section>
@@ -173,6 +171,20 @@
         <label>Integration Mode</label><div id="integration" class="pill">—</div>
         <label>Indicative Timeline</label><div id="timeline" class="pill">—</div>
       </div>
+      <details class="card muted" id="timeline_controls" style="margin-top:10px;">
+        <summary>Adjust Timeline</summary>
+        <div class="row" style="gap:16px;align-items:center;">
+          <label for="timeline_factor">Speed factor</label>
+          <input type="range" id="timeline_factor" min="0.5" max="1.5" step="0.05" value="1" />
+          <output id="timeline_factor_out" style="min-width:64px;display:inline-block;text-align:center;">x1.00</output>
+          <span class="muted">Lower = faster</span>
+        </div>
+        <div class="row" style="gap:12px;align-items:center;margin-top:8px;">
+          <label><input type="checkbox" id="timeline_override_toggle" /> Override</label>
+          <input type="number" id="timeline_override_weeks" min="1" max="52" placeholder="weeks" disabled />
+        </div>
+      </details>
+
       <div class="row" style="flex-direction:column; align-items:flex-start; width:100%;">
         <label>Narrative Summary</label>
         <div id="summary" style="padding:10px; border:1px solid var(--border); border-radius:8px; width:100%; background:#f8fafc;"></div>
@@ -207,7 +219,6 @@
   </div>
 
 <script>
-/* --- Static image paths (relative to this HTML file) --- */
 const IMG = {
   PAY: "./assets/Pay.png",
   PAY_TAX: "./assets/Pay + Tax.png",
@@ -221,11 +232,10 @@ const IMG = {
 
 function $(s){ return document.querySelector(s); }
 
-/* Step 2 IDs for quick checks */
 const STEP2_IDS = [
   'onb_forms','onb_spreadsheets','onb_api','onb_widget',
   'ver_manual','ver_3p_int','ver_3p_nonint',
-  'pay_manual_psp','pay_wires','pay_cheques','pay_digital_wallets',
+  'pay_manual_psp','pay_wires','pay_api_auto','pay_competitor','pay_cheques','pay_digital_wallets',
   'appr_none','appr_single','appr_dual',
   'tax_collects','tax_manual_share','tax_eoy'
 ];
@@ -249,7 +259,7 @@ function state(){
     recipient_countries: rc,
     onb_forms: g('onb_forms'), onb_spreadsheets: g('onb_spreadsheets'), onb_api: g('onb_api'), onb_widget: g('onb_widget'),
     ver_manual: g('ver_manual'), ver_3p_int: g('ver_3p_int'), ver_3p_nonint: g('ver_3p_nonint'),
-    pay_manual_psp: g('pay_manual_psp'), pay_wires: g('pay_wires'), pay_cheques: g('pay_cheques'), pay_digital_wallets: g('pay_digital_wallets'),
+    pay_manual_psp: g('pay_manual_psp'), pay_wires: g('pay_wires'), pay_api_auto: g('pay_api_auto'), pay_competitor: g('pay_competitor'), pay_cheques: g('pay_cheques'), pay_digital_wallets: g('pay_digital_wallets'),
     appr_none: g('appr_none'), appr_single: g('appr_single'), appr_dual: g('appr_dual'),
     tax_collects: g('tax_collects'), tax_manual_share: g('tax_manual_share'), tax_eoy: g('tax_eoy')
   };
@@ -259,12 +269,11 @@ function isStep1Complete(s){
   return !!(s.merchant_type && s.onboarding_country && s.funding_currency);
 }
 
-/* ----- Core logic (base: Index 2) ----- */
 function computeBundle(s){
   if (!hasStep2Selections()) return null;
   const hasTax = s.tax_collects || s.tax_manual_share || s.tax_eoy;
   const hasTrust = s.ver_manual || s.ver_3p_int || s.ver_3p_nonint;
-  const hasPayment = s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets;
+  const hasPayment = s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets || s.pay_api_auto || s.pay_competitor;
   if (hasTax && hasTrust) return "Pay + Tax + Trust";
   if (hasTax) return "Pay + Tax";
   if (hasTrust && hasPayment) return "Pay + Trust";
@@ -278,7 +287,12 @@ function bundleKey(bundle){
   return "PAY";
 }
 function isPayPalOnlyPayments(s){
-  return !!(s.pay_digital_wallets && !s.pay_manual_psp && !s.pay_wires && !s.pay_cheques);
+  return !!(s.pay_digital_wallets &&
+           !s.pay_manual_psp &&
+           !s.pay_wires &&
+           !s.pay_cheques &&
+           !s.pay_api_auto &&
+           !s.pay_competitor);
 }
 function computeDiagramKey(s, bundle){
   const base = bundleKey(bundle);
@@ -309,7 +323,33 @@ function computeTimeline(s,bundle,integration){
   return "8–12 weeks";
 }
 
-/* ----- Narrative summary (kept from Index 2) ----- */
+function adjustTimeline(base){
+  const fEl = document.getElementById('timeline_factor');
+  const tgl = document.getElementById('timeline_override_toggle');
+  const wEl = document.getElementById('timeline_override_weeks');
+
+  if (tgl && tgl.checked && wEl && wEl.value){
+    const n = Math.max(1, parseInt(wEl.value,10)||0);
+    return n + ' weeks';
+  }
+
+  if (!base) return base;
+  const nums = (base.match(/\d+/g)||[]).map(x=>parseInt(x,10));
+  const factor = fEl ? parseFloat(fEl.value||'1') : 1;
+  const unit = base.toLowerCase().includes('day') ? 'days' : 'weeks';
+
+  if (nums.length>=2){
+    let a = Math.max(1, Math.round(nums[0]*factor));
+    let b = Math.max(a, Math.round(nums[1]*factor));
+    return a + '–' + b + ' ' + unit;
+  } else if (nums.length===1){
+    let v = Math.max(1, Math.round(nums[0]*factor));
+    return v + ' ' + unit;
+  }
+  return base;
+}
+
+/* Narrative summary reverted to generic (no payment-variant lines) */
 function summarize(s,bundle,integration,timeline){
   const name = s.merchant_name || "the merchant";
   const regions = (s.recipient_countries||[]).join(", ") || "selected regions";
@@ -317,8 +357,12 @@ function summarize(s,bundle,integration,timeline){
   const out = [];
   out.push(`We propose implementing ${bundle} with ${integration} for ${name}.`);
   out.push(`Funding in ${currency}; paying recipients across ${regions}.`);
-  if (bundle.includes("Tax")) out.push("Enable seamless digital capture of W‑8/W‑9 forms and automated year‑end filing to simplify compliance.");
-  if (bundle.includes("Trust")) out.push("Introduce automated verification to reduce compliance risk and streamline recipient approvals.");
+  if (bundle.includes("Tax")) {
+    out.push("Enable seamless digital capture of W-8/W-9 forms and automated year-end filing to simplify compliance.");
+  }
+  if (bundle.includes("Trust")) {
+    out.push("Introduce automated verification to reduce compliance risk and streamline recipient approvals.");
+  }
   if (integration.includes("API")) {
     out.push("Integrate using the Trolley API to automate recipient onboarding and payouts.");
   } else {
@@ -328,10 +372,9 @@ function summarize(s,bundle,integration,timeline){
   return out.join(" ");
 }
 
-/* ----- Mapping helpers ----- */
 const anyOnboarding  = s => s.onb_forms || s.onb_spreadsheets || s.onb_api || s.onb_widget;
 const anyVerification= s => s.ver_manual || s.ver_3p_int || s.ver_3p_nonint;
-const anyPayments    = s => s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets;
+const anyPayments    = s => s.pay_manual_psp || s.pay_wires || s.pay_cheques || s.pay_digital_wallets || s.pay_api_auto || s.pay_competitor;
 const anyApprovals   = s => s.appr_none || s.appr_single || s.appr_dual;
 const anyTax         = s => s.tax_collects || s.tax_manual_share || s.tax_eoy;
 
@@ -341,28 +384,84 @@ function mapRow(step,current,future,prods){
   return tr;
 }
 
+/* Mapping with updated payments text retained */
 function buildMapping(s,bundle,integration){
   const tbody = $('#mapBody'); if (!tbody) return;
   tbody.innerHTML = "";
 
-  const onb_current = [ s.onb_forms && "Manual Forms", s.onb_spreadsheets && "Spreadsheet Uploads", s.onb_api && "API", s.onb_widget && "Widget/Application" ].filter(Boolean).join(", ");
-  const ver_current = [ s.ver_manual && "Manual", s.ver_3p_int && "3rd party (integrated)", s.ver_3p_nonint && "3rd party (non‑integrated)" ].filter(Boolean).join(", ");
-  const pay_current = [ s.pay_manual_psp && "Manual payouts (E-Transfer, Wise, etc.)", s.pay_digital_wallets && "Digital Wallets (PayPal)", s.pay_wires && "Manual Transfers / Wires", s.pay_cheques && "Cheques" ].filter(Boolean).join(", ");
-  const appr_current= [ s.appr_none && "None", s.appr_single && "Single", s.appr_dual && "Dual" ].filter(Boolean).join(", ");
-  const tax_current = [ s.tax_collects && "Collects W‑8/W‑9", s.tax_manual_share && "Manual sharing", s.tax_eoy && "End‑of‑Year Filing" ].filter(Boolean).join(", ");
+  const onb_current = [
+    s.onb_forms && "Manual Forms",
+    s.onb_spreadsheets && "Spreadsheet Uploads",
+    s.onb_api && "API",
+    s.onb_widget && "Widget/Application"
+  ].filter(Boolean).join(", ");
 
-  const onb_future = computeIntegration(s).includes("API") ? "Automated recipient onboarding via API (with optional widget) and mapped external IDs." : "Automated recipient onboarding via the Trolley Widget; IDs mapped for downstream reconciliation.";
-  const ver_future = (bundle||"").includes("Trust") ? "Automated verification with configurable checks and failure triage to reduce compliance risk." : "Lightweight checks with manual review as needed.";
-  let   pay_future = computeIntegration(s).includes("API") ? "Leverage the Trolley API to automate recipient onboarding and payout processing at scale." : "Prepare payment batches in platform; apply role‑based approvals; automate disbursements.";
-  if (isPayPalOnlyPayments(s)) pay_future += " (via PayPal integration).";
-  const appr_future= "Role‑based approvals with audit trail and separation of duties.";
-  const tax_future = (bundle||"").includes("Tax") ? "Digital W‑8/W‑9 capture, validation, and automated year‑end filing; use Invoices for taxable segmentation when required." : "N/A";
+  const ver_current = [
+    s.ver_manual && "Manual",
+    s.ver_3p_int && "3rd party (integrated)",
+    s.ver_3p_nonint && "3rd party (non-integrated)"
+  ].filter(Boolean).join(", ");
 
-  if (anyOnboarding(s))   tbody.appendChild(mapRow("Recipient Onboarding", onb_current, onb_future, (bundle||"").includes("Trust")?"Pay, Trust":"Pay"));
-  if (anyVerification(s)) tbody.appendChild(mapRow("Verification", ver_current, ver_future, (bundle||"").includes("Trust")?"Trust":"—"));
-  if (anyPayments(s))     tbody.appendChild(mapRow("Payments", pay_current, pay_future, "Pay"));
-  if (anyApprovals(s))    tbody.appendChild(mapRow("Payment Approvals", appr_current, appr_future, "Pay"));
-  if (anyTax(s))          tbody.appendChild(mapRow("Tax & Reporting", tax_current, tax_future, (bundle||"").includes("Tax")?"Tax":"—"));
+  const pay_current = [
+    s.pay_manual_psp && "Manual payouts (E-Transfer, Wise, etc.)",
+    s.pay_digital_wallets && "Digital Wallets (PayPal)",
+    s.pay_wires && "Manual Transfers / Wires",
+    s.pay_api_auto && "API automated",
+    s.pay_competitor && "Competitor Solution",
+    s.pay_cheques && "Cheques"
+  ].filter(Boolean).join(", ");
+
+  const appr_current= [
+    s.appr_none && "None",
+    s.appr_single && "Single",
+    s.appr_dual && "Dual"
+  ].filter(Boolean).join(", ");
+
+  const tax_current = [
+    s.tax_collects && "Collects W-8/W-9",
+    s.tax_manual_share && "Manual sharing",
+    s.tax_eoy && "End-of-Year Filing"
+  ].filter(Boolean).join(", ");
+
+  const onb_future = computeIntegration(s).includes("API")
+    ? "Automated recipient onboarding via API (with optional widget for recipient led onboarding)."
+    : "Automated recipient onboarding via the Trolley Widget.";
+
+  const ver_future = (bundle||"").includes("Trust")
+    ? "Automated verification with configurable checks and failure triage to reduce compliance risk."
+    : "Lightweight checks with manual review as needed.";
+
+  // Payments future text aligned with your variants
+  let pay_future = "";
+  if (s.pay_api_auto) {
+    pay_future = "Push payments into Trolley via the API to automate disbursements. Transition existing automations to Trolley's API for fully automated processing.";
+  } else if (s.pay_competitor) {
+    pay_future = "Migrate payouts from competitor to Trolley. Prepare payment batches in platform; apply role-based approvals; automate disbursements.";
+  } else if (anyPayments(s)) {
+    pay_future = "Prepare payment batches in platform; apply role-based approvals; automate disbursements.";
+  } else {
+    pay_future = "Leverage Trolley to manage payout operations.";
+  }
+  if (isPayPalOnlyPayments(s)) {
+    pay_future += " (via PayPal integration).";
+  }
+
+  const appr_future= "Role-based approvals with audit trail and segregation of duties.";
+
+  const tax_future = (bundle||"").includes("Tax")
+    ? "Digital W-8/W-9 capture, validation, and automated year-end filing; use Invoices for taxable segmentation when required."
+    : "N/A";
+
+  if (anyOnboarding(s))
+    tbody.appendChild(mapRow("Recipient Onboarding", onb_current, onb_future, (bundle||"").includes("Trust")?"Pay, Trust":"Pay"));
+  if (anyVerification(s))
+    tbody.appendChild(mapRow("Verification", ver_current, ver_future, (bundle||"").includes("Trust")?"Trust":"—"));
+  if (anyPayments(s))
+    tbody.appendChild(mapRow("Payments", pay_current, pay_future, "Pay"));
+  if (anyApprovals(s))
+    tbody.appendChild(mapRow("Payment Approvals", appr_current, appr_future, "Pay"));
+  if (anyTax(s))
+    tbody.appendChild(mapRow("Tax & Reporting", tax_current, tax_future, (bundle||"").includes("Tax")?"Tax":"—"));
 }
 
 function buildRoadmap(bundle,integration){
@@ -372,40 +471,39 @@ function buildRoadmap(bundle,integration){
   const hasTax   = (bundle||"").includes("Tax");
   const hasTrust = (bundle||"").includes("Trust");
 
-  // 1) Integration channel → wording in Deploy
   const api = !!s.onb_api; const widget = !!s.onb_widget;
   let setupLine = "Configure & test integration (API or Widget)";
   if (api && widget) setupLine = "Configure & test API + Widget";
   else if (api)      setupLine = "Configure & test API connection";
   else if (widget)   setupLine = "Configure & test Widget setup";
 
-  // 4 & 6) Wallet-only + multi-region → annotate comms line
   let commsLine = "Recipient onboarding & communications";
   const notes = [];
-  const walletOnly = !!(s.pay_digital_wallets && !s.pay_manual_psp && !s.pay_wires && !s.pay_cheques);
+  const walletOnly = !!(s.pay_digital_wallets &&
+                         !s.pay_manual_psp &&
+                         !s.pay_wires &&
+                         !s.pay_cheques &&
+                         !s.pay_api_auto &&
+                         !s.pay_competitor);
   const multiRegion = (s.recipient_countries || []).length >= 3;
   if (walletOnly) notes.push("wallet-only payout flow");
   if (multiRegion) notes.push("localized onboarding & comms");
   if (notes.length) commsLine += ` (${notes.join('; ')})`;
 
-  // 2) Implementation type → name the migration
   let migrateStr = "Migrate recipient list to Trolley (export & field mapping)";
   if (impl === 'competitor replacement' && (s.competitor_name||'').trim()){
     migrateStr = `Migrate recipient list from ${s.competitor_name} (export & field mapping)`;
   }
 
-  // 3) Approvals level → reflect in Go‑Live
   let approvalsText = "Confirm fees, recipient status & batch approval process";
   if (s.appr_dual)   approvalsText = "Confirm fees, recipient status & dual batch approval process";
   else if (s.appr_single) approvalsText = "Confirm fees, recipient status & single batch approval process";
 
-  // 7) Currencies → tighten Go‑Live confirmation
   let countriesLine = "Confirm payout countries & volume ramp schedule";
   if (multiRegion || (s.funding_currency && s.funding_currency !== 'USD')){
     countriesLine = "Confirm payout countries, currencies & volume ramp schedule";
   }
 
-  // New: Header suffixes computed from go_live_date (ported from Index 1)
   let kickoffSuffix = '';
   let goLiveSuffix = '';
   if (s.go_live_date) {
@@ -414,15 +512,15 @@ function buildRoadmap(bundle,integration){
       if (!isNaN(gl)) {
         const fmt = (d) => d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
         const start = new Date(gl);
-        start.setDate(start.getDate() - 42); // 6 weeks prior
+        start.setDate(start.getDate() - 42);
         const weekStart = new Date(start);
-        const day = weekStart.getDay(); // 0=Sun,1=Mon,...
-        const offset = (day === 0) ? 6 : (day - 1); // shift back to Monday
+        const day = weekStart.getDay();
+        const offset = (day === 0) ? 6 : (day - 1);
         weekStart.setDate(weekStart.getDate() - offset);
         kickoffSuffix = `(Begin by week of ${fmt(weekStart)})`;
         goLiveSuffix = `(Target Date: ${fmt(gl)})`;
       }
-    } catch {/* ignore */}
+    } catch {}
   }
 
   const phases = [
@@ -440,7 +538,7 @@ function buildRoadmap(bundle,integration){
     {
       title: 'Build',
       items: [
-        'Co‑build project plan',
+        'Co-build project plan',
         'Technical configuration',
         'Workflow alignment',
         'Department training & resources',
@@ -456,7 +554,7 @@ function buildRoadmap(bundle,integration){
       ]
     },
     {
-      title: 'Go‑Live',
+      title: 'Go-Live',
       suffix: goLiveSuffix,
       items: [
         'Final approvals',
@@ -469,16 +567,15 @@ function buildRoadmap(bundle,integration){
     }
   ];
 
-  // Conditional inserts
   if (needsMigration){
     phases[1].items.push(migrateStr);
-    phases[2].items.push('Change‑management communications to recipients');
+    phases[2].items.push('Change-management communications to recipients');
   }
   if (impl === 'paypal migration'){
     phases[2].items.push('Connect PayPal and verify wallet settlement');
   }
   if (hasTax){
-    phases[2].items.push('Enable digital W‑8/W‑9 capture & schedule EoY filing');
+    phases[2].items.push('Enable digital W-8/W-9 capture & schedule EoY filing');
   }
   if (hasTrust){
     phases[2].items.push('Configure verification checks & failure triage');
@@ -494,7 +591,6 @@ function buildRoadmap(bundle,integration){
     li.appendChild(title); li.appendChild(ul); ol.appendChild(li);
   }
 
-  // Note at bottom (not numbered)
   const noteEl = document.getElementById('roadmap_note');
   if (noteEl){
     noteEl.style.display = 'block';
@@ -502,7 +598,6 @@ function buildRoadmap(bundle,integration){
   }
 }
 
-/* ----- Diagram in the app UI ----- */
 function setDiagram(imgEl, phEl, bundle){
   const s = state();
   const key = computeDiagramKey(s, bundle);
@@ -511,11 +606,9 @@ function setDiagram(imgEl, phEl, bundle){
   else { imgEl.removeAttribute("src"); imgEl.style.display = "none"; if (phEl) phEl.style.display = "block"; }
 }
 
-/* ----- Render & Reset ----- */
 function render(){
   const s = state();
 
-  // Show/hide competitor selector based on Implementation Type (case-insensitive)
   const compRow = document.getElementById('competitor_row');
   if (compRow){
     const implVal = (s.implementation_type || '').toLowerCase();
@@ -531,22 +624,25 @@ function render(){
   const bundle = computeBundle(s);
   const stepReady = isStep1Complete(s) && hasStep2Selections();
   const integration = stepReady ? computeIntegration(s) : '';
-  const timeline = stepReady ? computeTimeline(s, bundle || "", integration) : '';
+  const baseTimeline = stepReady ? computeTimeline(s, bundle || "", integration) : '';
+  const timeline = stepReady ? adjustTimeline(baseTimeline) : '';
 
-  // Proposed Solution
   $('#bundle').textContent      = bundle || '—';
   $('#integration').textContent = stepReady ? integration : '—';
   $('#timeline').textContent    = stepReady ? timeline : '—';
 
   const imgB = $('#diagramB'), phB = $('#diagramPlaceholderB');
-  if (bundle) setDiagram(imgB, phB, bundle); else { imgB.removeAttribute('src'); imgB.style.display='none'; if (phB) phB.style.display='block'; }
+  if (bundle) setDiagram(imgB, phB, bundle);
+  else {
+    imgB.removeAttribute('src');
+    imgB.style.display='none';
+    if (phB) phB.style.display='block';
+  }
 
   $('#summary').textContent = (bundle && stepReady) ? summarize(s, bundle, integration, timeline) : '';
 
-  // Mapping always reflects current selections
   buildMapping(s, bundle || 'Pay', integration);
 
-  // Roadmap visibility depends on Step 1 & Step 2 completion
   const roadmapEl = document.getElementById('roadmap');
   if (roadmapEl){
     if (isStep1Complete(s) && hasStep2Selections()){
@@ -564,22 +660,37 @@ function resetAll(){
   document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
   document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
   const d = document.getElementById('go_live_date'); if (d) d.value='';
+
+  const csvBtn = document.getElementById('btnCsv');
+  if (csvBtn) csvBtn.addEventListener('click', generateCSV);
+
+  const implSel = document.getElementById('implementation_type');
+  const payCompet = document.getElementById('pay_competitor');
+  const compName = document.getElementById('competitor_name');
+  const maybeAutoCheckCompetitor = () => {
+    if (!payCompet) return;
+    const val = (implSel && implSel.value || "").toLowerCase();
+    if (val.includes('competitor replacement')) payCompet.checked = true;
+    if (compName && compName.value && compName.value.trim().length) payCompet.checked = true;
+  };
+  if (implSel) implSel.addEventListener('change', maybeAutoCheckCompetitor);
+  if (compName) compName.addEventListener('input', maybeAutoCheckCompetitor);
+
   render();
 }
 
-/* ===== PDF (fixed-height background box; Option 1 margins) ===== */
 function generatePDF(){
   const s = state();
   const bundle = computeBundle(s);
   const stepReady = isStep1Complete(s) && hasStep2Selections();
   const integrationDisplay = stepReady ? computeIntegration(s) : '—';
-  const timelineDisplay = stepReady ? computeTimeline(s, bundle || "", integrationDisplay) : '—';
+  const baseTimelineDisplay = stepReady ? computeTimeline(s, bundle || "", integrationDisplay) : '—';
+  const timelineDisplay = stepReady ? adjustTimeline(baseTimelineDisplay) : '—';
   const key = bundle ? computeDiagramKey(s, bundle) : null;
   const diagramSrc = key ? IMG[key] : "";
   const summaryText = (bundle && stepReady) ? summarize(s,bundle,integrationDisplay,timelineDisplay) : "";
   const merchantName = s.merchant_name || "the merchant";
 
-  // Build the print document
   const win = window.open('', '_blank');
 
   const styles = `
@@ -626,7 +737,6 @@ function generatePDF(){
     </div>
   `;
 
-  // Page 2+: mapping + roadmap (clone from UI so it matches what you see)
   const mapClone = document.querySelector('#mapping table').cloneNode(true);
   const phasesClone = document.getElementById('phases').innerHTML;
   const step1Complete = isStep1Complete(s);
@@ -666,29 +776,134 @@ function generatePDF(){
   }
 }
 
-/* ----- Bind ----- */
+function generateCSV(){
+  const s = state();
+  const rows = [];
+  const b = v => (v ? 1 : 0);
+  const record = {
+    merchant_name: s.merchant_name,
+    merchant_type: s.merchant_type,
+    onboarding_country: s.onboarding_country,
+    funding_currency: s.funding_currency,
+    implementation_type: s.implementation_type,
+    competitor_name: s.competitor_name,
+    go_live_date: s.go_live_date,
+    recipient_countries: (s.recipient_countries || []).join(";"),
+    onb_forms: b(s.onb_forms),
+    onb_spreadsheets: b(s.onb_spreadsheets),
+    onb_api: b(s.onb_api),
+    onb_widget: b(s.onb_widget),
+    ver_manual: b(s.ver_manual),
+    ver_3p_int: b(s.ver_3p_int),
+    ver_3p_nonint: b(s.ver_3p_nonint),
+    pay_manual_psp: b(s.pay_manual_psp),
+    pay_wires: b(s.pay_wires),
+    pay_api_auto: b(s.pay_api_auto),
+    pay_competitor: b(s.pay_competitor),
+    pay_cheques: b(s.pay_cheques),
+    pay_digital_wallets: b(s.pay_digital_wallets),
+    appr_none: b(s.appr_none),
+    appr_single: b(s.appr_single),
+    appr_dual: b(s.appr_dual),
+    tax_collects: b(s.tax_collects),
+    tax_manual_share: b(s.tax_manual_share),
+    tax_eoy: b(s.tax_eoy)
+  };
+  const headers = Object.keys(record);
+  rows.push(headers.join(","));
+  rows.push(headers.map(h => `"${String(record[h] ?? "").replace(/"/g,'""')}"`).join(","));
+  const csv = rows.join("\r\n");
+  const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "onboarding_selections.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function wire(){
   const controls = document.querySelectorAll('input, select, textarea');
-  for (const el of controls){ ['change','input','click','keyup'].forEach(evt => el.addEventListener(evt, render)); }
+  for (const el of controls){
+    ['change','input','click','keyup'].forEach(evt => el.addEventListener(evt, render));
+  }
+  ['timeline_factor','timeline_override_toggle','timeline_override_weeks'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ ['change','input'].forEach(evt=>el.addEventListener(evt, render)); }
+  });
+  const tgl=document.getElementById('timeline_override_toggle');
+  const wEl=document.getElementById('timeline_override_weeks');
+  if (tgl && wEl){
+    tgl.addEventListener('change', ()=>{
+      wEl.disabled = !tgl.checked;
+      if(!tgl.checked) wEl.value='';
+      const implSel = document.getElementById('implementation_type');
+      const payCompet = document.getElementById('pay_competitor');
+      const compName = document.getElementById('competitor_name');
+      const maybeAutoCheckCompetitor = () => {
+        if (!payCompet) return;
+        const val = (implSel && implSel.value || '').toLowerCase();
+        if (val === 'competitor replacement') { payCompet.checked = true; render(); }
+        if (compName && compName.value && compName.value.trim().length) { payCompet.checked = true; render(); }
+      };
+      if (implSel) implSel.addEventListener('change', maybeAutoCheckCompetitor);
+      if (compName) compName.addEventListener('input', maybeAutoCheckCompetitor);
+      render();
+    });
+  }
   document.getElementById('btnPdf').addEventListener('click', generatePDF);
   document.getElementById('btnReset').addEventListener('click', resetAll);
 
-  // approvals mutually exclusive
   const apprIds = ['appr_none','appr_single','appr_dual'];
   for (const id of apprIds){
     const el=document.getElementById(id);
     if(el){
       el.addEventListener('change', e=>{
         if(e.target.checked){
-          for (const other of apprIds){ if(other!==id){ const oe=document.getElementById(other); if(oe) oe.checked=false; } }
+          for (const other of apprIds){
+            if(other!==id){
+              const oe=document.getElementById(other);
+              if(oe) oe.checked=false;
+            }
+          }
+          const implSel = document.getElementById('implementation_type');
+          const payCompet = document.getElementById('pay_competitor');
+          const compName = document.getElementById('competitor_name');
+          const maybeAutoCheckCompetitor = () => {
+            if (!payCompet) return;
+            const val = (implSel && implSel.value || '').toLowerCase();
+            if (val === 'competitor replacement') { payCompet.checked = true; render(); }
+            if (compName && compName.value && compName.value.trim().length) { payCompet.checked = true; render(); }
+          };
+          if (implSel) implSel.addEventListener('change', maybeAutoCheckCompetitor);
+          if (compName) compName.addEventListener('input', maybeAutoCheckCompetitor);
           render();
         }
       });
     }
   }
+
+  const implSel = document.getElementById('implementation_type');
+  const payCompet = document.getElementById('pay_competitor');
+  const compName = document.getElementById('competitor_name');
+  const maybeAutoCheckCompetitor = () => {
+    if (!payCompet) return;
+    const val = (implSel && implSel.value || '').toLowerCase();
+    if (val === 'competitor replacement') { payCompet.checked = true; render(); }
+    if (compName && compName.value && compName.value.trim().length) { payCompet.checked = true; render(); }
+  };
+  if (implSel) implSel.addEventListener('change', maybeAutoCheckCompetitor);
+  if (compName) compName.addEventListener('input', maybeAutoCheckCompetitor);
+
   render();
 }
-if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', wire); } else { wire(); }
+if (document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', wire);
+} else {
+  wire();
+}
 </script>
 </body>
 </html>
