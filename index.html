@@ -79,6 +79,20 @@
           <option>USD</option><option>CAD</option><option>EUR</option><option>GBP</option><option>AUD</option>
         </select>
       </div>
+
+      <!-- US-only options -->
+      <div class="row" id="us_options_row" style="display:none;">
+        <label>Banking Partner</label>
+        <select id="banking_partner">
+          <option>CRB</option>
+          <option>AFX</option>
+        </select>
+
+        <label id="stripe_option" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="funding_via_stripe" /> Funding via Stripe?
+        </label>
+      </div>
+
       <div class="row">
         <div class="rc-group" style="width:100%;">
           <label class="section-label">Recipient Countries (select all that apply)</label>
@@ -224,6 +238,10 @@ const IMG = {
   PAY_TAX: "./assets/Pay + Tax.png",
   PAY_TRUST: "./assets/Pay + Trust.png",
   PAY_TAX_TRUST: "./assets/Pay + Tax + Trust.png",
+  STRIPE_PAY: "./assets/Stripe - Pay.png",
+  STRIPE_PAY_TAX: "./assets/Stripe - Pay + Tax.png",
+  STRIPE_PAY_TRUST: "./assets/Stripe - Pay + Trust.png",
+  STRIPE_PAY_TAX_TRUST: "./assets/Stripe - Pay + Tax + Trust.png",
   PAY_PAYPAL: "./assets/Pay (PayPal).png",
   PAY_TAX_PAYPAL: "./assets/Pay + Tax (PayPal).png",
   PAY_TRUST_PAYPAL: "./assets/Pay + Trust (PayPal).png",
@@ -256,6 +274,8 @@ function state(){
     go_live_date: ($('#go_live_date')||{}).value || "",
     onboarding_country: ($('#onboarding_country')||{}).value || "",
     funding_currency: ($('#funding_currency')||{}).value || "",
+    banking_partner: ($('#banking_partner')||{}).value || "CRB",
+    funding_via_stripe: !!((document.getElementById('funding_via_stripe')||{}).checked),
     recipient_countries: rc,
     onb_forms: g('onb_forms'), onb_spreadsheets: g('onb_spreadsheets'), onb_api: g('onb_api'), onb_widget: g('onb_widget'),
     ver_manual: g('ver_manual'), ver_3p_int: g('ver_3p_int'), ver_3p_nonint: g('ver_3p_nonint'),
@@ -296,6 +316,14 @@ function isPayPalOnlyPayments(s){
 }
 function computeDiagramKey(s, bundle){
   const base = bundleKey(bundle);
+
+  // Stripe funding overrides other diagram variants (e.g., PayPal-only)
+  if (s.funding_via_stripe){
+    if (base === 'PAY') return 'STRIPE_PAY';
+    if (base === 'PAY_TAX') return 'STRIPE_PAY_TAX';
+    if (base === 'PAY_TRUST') return 'STRIPE_PAY_TRUST';
+    if (base === 'PAY_TAX_TRUST') return 'STRIPE_PAY_TAX_TRUST';
+  }
   if (isPayPalOnlyPayments(s)){
     if (base === 'PAY') return 'PAY_PAYPAL';
     if (base === 'PAY_TAX') return 'PAY_TAX_PAYPAL';
@@ -609,6 +637,30 @@ function setDiagram(imgEl, phEl, bundle){
 function render(){
   const s = state();
 
+  // US-only options (Banking Partner + Funding via Stripe)
+  const usRow = document.getElementById('us_options_row');
+  const bpSel = document.getElementById('banking_partner');
+  const stripeWrap = document.getElementById('stripe_option');
+  const stripeCb = document.getElementById('funding_via_stripe');
+  const isUS = (s.onboarding_country === 'United States');
+  if (usRow){
+    usRow.style.display = isUS ? '' : 'none';
+  }
+  // If merchant country is not US, reset US-only controls to defaults.
+  if (!isUS){
+    if (bpSel) bpSel.value = 'CRB';
+    if (stripeCb) stripeCb.checked = false;
+  }
+  // If Banking Partner is AFX, hide the Stripe funding option.
+  const showStripe = isUS && (!bpSel || bpSel.value !== 'AFX');
+  if (stripeWrap){
+    stripeWrap.style.display = showStripe ? 'flex' : 'none';
+  }
+  if (!showStripe && stripeCb){
+    stripeCb.checked = false;
+  }
+
+
   const compRow = document.getElementById('competitor_row');
   if (compRow){
     const implVal = (s.implementation_type || '').toLowerCase();
@@ -785,6 +837,8 @@ function generateCSV(){
     merchant_type: s.merchant_type,
     onboarding_country: s.onboarding_country,
     funding_currency: s.funding_currency,
+    banking_partner: (s.onboarding_country === 'United States') ? (s.banking_partner || 'CRB') : 'N/A',
+    funding_via_stripe: (s.onboarding_country === 'United States') ? (s.funding_via_stripe ? 'Yes' : 'No') : 'N/A',
     implementation_type: s.implementation_type,
     competitor_name: s.competitor_name,
     go_live_date: s.go_live_date,
